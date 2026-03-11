@@ -251,7 +251,53 @@
                         {{^isNumeric}}
                         {{^isDate}}
                         {{^isDateTime}}
+                            {{#isArray}}
+                            {{#items.isEnum}}
+                            {{#items.isString}}
+                            if (utf8JsonReader.TokenType == JsonTokenType.Null)
+                            {
+                                {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}} = {{>OptionProperty}}({{{datatypeWithEnum}}})null);
+                            }
+                            else if (utf8JsonReader.TokenType == JsonTokenType.StartArray)
+                            {
+                                {{#items.isInnerEnum}}
+                                var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Items = new List<{{classname}}.{{{items.datatypeWithEnum}}}>();
+                                {{/items.isInnerEnum}}
+                                {{^items.isInnerEnum}}
+                                var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Items = new List<{{{items.datatypeWithEnum}}}>();
+                                {{/items.isInnerEnum}}
+                                while (utf8JsonReader.Read())
+                                {
+                                    if (utf8JsonReader.TokenType == JsonTokenType.EndArray)
+                                        break;
+
+                                    string{{nrt?}} {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}ItemRawValue = utf8JsonReader.GetString();
+                                    if ({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}ItemRawValue == null)
+                                        throw new JsonException();
+
+                                    {{^items.isInnerEnum}}
+                                    {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Items.Add({{{items.datatypeWithEnum}}}ValueConverter.FromString({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}ItemRawValue));
+                                    {{/items.isInnerEnum}}
+                                    {{#items.isInnerEnum}}
+                                    {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Items.Add({{classname}}.{{{items.datatypeWithEnum}}}FromString({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}ItemRawValue));
+                                    {{/items.isInnerEnum}}
+                                }
+                                {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}} = {{>OptionProperty}}{{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Items);
+                            }
+                            else
+                                throw new JsonException();
+                            {{/items.isString}}
+                            {{^items.isString}}
                             {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}} = {{>OptionProperty}}JsonSerializer.Deserialize<{{{datatypeWithEnum}}}>(ref utf8JsonReader, jsonSerializerOptions){{^isNullable}}{{nrt!}}{{/isNullable}});
+                            {{/items.isString}}
+                            {{/items.isEnum}}
+                            {{^items.isEnum}}
+                            {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}} = {{>OptionProperty}}JsonSerializer.Deserialize<{{{datatypeWithEnum}}}>(ref utf8JsonReader, jsonSerializerOptions){{^isNullable}}{{nrt!}}{{/isNullable}});
+                            {{/items.isEnum}}
+                            {{/isArray}}
+                            {{^isArray}}
+                            {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}} = {{>OptionProperty}}JsonSerializer.Deserialize<{{{datatypeWithEnum}}}>(ref utf8JsonReader, jsonSerializerOptions){{^isNullable}}{{nrt!}}{{/isNullable}});
+                            {{/isArray}}
                         {{/isDateTime}}
                         {{/isDate}}
                         {{/isNumeric}}
@@ -513,16 +559,34 @@
             {{^isNumeric}}
             {{#isInnerEnum}}
             {{#isNullable}}
-            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}{{^required}}Option.Value{{#vendorExtensions.x-is-value-type}}{{nrt!}}.Value{{/vendorExtensions.x-is-value-type}}{{/required}}{{#required}}{{#isNullable}}{{nrt!}}.Value{{/isNullable}}{{/required}});
+            {{#required}}
+            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}{{nrt!}}.Value);
             if ({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue != null)
                 writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
             else
                 writer.WriteNull("{{baseName}}");
+            {{/required}}
+            {{^required}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.IsSet && {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value.HasValue)
+            {
+                var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value.Value);
+                writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
+            }
+            {{/required}}
 
             {{/isNullable}}
             {{^isNullable}}
-            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}{{^required}}Option.Value{{#vendorExtensions.x-is-value-type}}{{nrt!}}.Value{{/vendorExtensions.x-is-value-type}}{{/required}}{{#required}}{{#isNullable}}{{nrt!}}.Value{{/isNullable}}{{/required}});
+            {{#required}}
+            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}});
             writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
+            {{/required}}
+            {{^required}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.IsSet)
+            {
+                var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value);
+                writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
+            }
+            {{/required}}
             {{/isNullable}}
             {{/isInnerEnum}}
             {{^isInnerEnum}}
@@ -607,6 +671,84 @@
             {{^isNumeric}}
             {{^isDate}}
             {{^isDateTime}}
+            {{#isArray}}
+            {{#items.isEnum}}
+            {{#items.isString}}
+            {{#required}}
+            {{#isNullable}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}} != null)
+            {
+                writer.WritePropertyName("{{baseName}}");
+                writer.WriteStartArray();
+                foreach (var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item in {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}})
+                {
+                    {{^items.isInnerEnum}}
+                    writer.WriteStringValue({{{items.datatypeWithEnum}}}ValueConverter.ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                    {{/items.isInnerEnum}}
+                    {{#items.isInnerEnum}}
+                    writer.WriteStringValue({{classname}}.{{{items.datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                    {{/items.isInnerEnum}}
+                }
+                writer.WriteEndArray();
+            }
+            else
+                writer.WriteNull("{{baseName}}");
+            {{/isNullable}}
+            {{^isNullable}}
+            writer.WritePropertyName("{{baseName}}");
+            writer.WriteStartArray();
+            foreach (var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item in {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}})
+            {
+                {{^items.isInnerEnum}}
+                writer.WriteStringValue({{{items.datatypeWithEnum}}}ValueConverter.ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                {{/items.isInnerEnum}}
+                {{#items.isInnerEnum}}
+                writer.WriteStringValue({{classname}}.{{{items.datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                {{/items.isInnerEnum}}
+            }
+            writer.WriteEndArray();
+            {{/isNullable}}
+            {{/required}}
+            {{^required}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.IsSet)
+            {{#isNullable}}
+                if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value != null)
+                {
+                    writer.WritePropertyName("{{baseName}}");
+                    writer.WriteStartArray();
+                    foreach (var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item in {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}})
+                    {
+                        {{^items.isInnerEnum}}
+                        writer.WriteStringValue({{{items.datatypeWithEnum}}}ValueConverter.ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                        {{/items.isInnerEnum}}
+                        {{#items.isInnerEnum}}
+                        writer.WriteStringValue({{classname}}.{{{items.datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                        {{/items.isInnerEnum}}
+                    }
+                    writer.WriteEndArray();
+                }
+                else
+                    writer.WriteNull("{{baseName}}");
+            {{/isNullable}}
+            {{^isNullable}}
+            {
+                writer.WritePropertyName("{{baseName}}");
+                writer.WriteStartArray();
+                foreach (var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item in {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}})
+                {
+                    {{^items.isInnerEnum}}
+                    writer.WriteStringValue({{{items.datatypeWithEnum}}}ValueConverter.ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                    {{/items.isInnerEnum}}
+                    {{#items.isInnerEnum}}
+                    writer.WriteStringValue({{classname}}.{{{items.datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}Item));
+                    {{/items.isInnerEnum}}
+                }
+                writer.WriteEndArray();
+            }
+            {{/isNullable}}
+            {{/required}}
+            {{/items.isString}}
+            {{^items.isString}}
             {{#required}}
             {{#isNullable}}
             if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}} != null)
@@ -640,6 +782,79 @@
             }
             {{/isNullable}}
             {{/required}}
+            {{/items.isString}}
+            {{/items.isEnum}}
+            {{^items.isEnum}}
+            {{#required}}
+            {{#isNullable}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}} != null)
+            {
+                writer.WritePropertyName("{{baseName}}");
+                JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+            }
+            else
+                writer.WriteNull("{{baseName}}");
+            {{/isNullable}}
+            {{^isNullable}}
+            writer.WritePropertyName("{{baseName}}");
+            JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+            {{/isNullable}}
+            {{/required}}
+            {{^required}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.IsSet)
+            {{#isNullable}}
+                if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value != null)
+                {
+                    writer.WritePropertyName("{{baseName}}");
+                    JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+                }
+                else
+                    writer.WriteNull("{{baseName}}");
+            {{/isNullable}}
+            {{^isNullable}}
+            {
+                writer.WritePropertyName("{{baseName}}");
+                JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+            }
+            {{/isNullable}}
+            {{/required}}
+            {{/items.isEnum}}
+            {{/isArray}}
+            {{^isArray}}
+            {{#required}}
+            {{#isNullable}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}} != null)
+            {
+                writer.WritePropertyName("{{baseName}}");
+                JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+            }
+            else
+                writer.WriteNull("{{baseName}}");
+            {{/isNullable}}
+            {{^isNullable}}
+            writer.WritePropertyName("{{baseName}}");
+            JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+            {{/isNullable}}
+            {{/required}}
+            {{^required}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.IsSet)
+            {{#isNullable}}
+                if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value != null)
+                {
+                    writer.WritePropertyName("{{baseName}}");
+                    JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+                }
+                else
+                    writer.WriteNull("{{baseName}}");
+            {{/isNullable}}
+            {{^isNullable}}
+            {
+                writer.WritePropertyName("{{baseName}}");
+                JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+            }
+            {{/isNullable}}
+            {{/required}}
+            {{/isArray}}
             {{/isDateTime}}
             {{/isDate}}
             {{/isNumeric}}
